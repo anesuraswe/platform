@@ -1,43 +1,28 @@
-import prisma from "../lib/prisma.js";
+const prisma = require('../lib/prisma.js');
 
-export const addMessage = async (req, res) => {
-  const tokenUserId = req.userId;
-  const chatId = req.params.chatId;
-  const text = req.body.text;
-
+// Get all seats for an event
+const getSeatsByEventId = async (req, res) => {
+  const { eventId } = req.params;
   try {
-    const chat = await prisma.chat.findUnique({
-      where: {
-        id: chatId,
-        userIDs: {
-          hasSome: [tokenUserId],
-        },
-      },
-    });
-
-    if (!chat) return res.status(404).json({ message: "Chat not found!" });
-
-    const message = await prisma.message.create({
-      data: {
-        text,
-        chatId,
-        userId: tokenUserId,
-      },
-    });
-
-    await prisma.chat.update({
-      where: {
-        id: chatId,
-      },
-      data: {
-        seenBy: [tokenUserId],
-        lastMessage: text,
-      },
-    });
-
-    res.status(200).json(message);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Failed to add message!" });
+    const seats = await prisma.seat.findMany({ where: { eventId } });
+    res.json(seats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch seats' });
   }
 };
+
+// Reserve a seat
+const reserveSeat = async (req, res) => {
+  const { seatId } = req.params;
+  try {
+    const seat = await prisma.seat.update({
+      where: { id: seatId },
+      data: { status: 'reserved' },
+    });
+    res.json({ message: 'Seat reserved successfully', seat });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to reserve seat' });
+  }
+};
+
+module.exports = { getSeatsByEventId, reserveSeat };

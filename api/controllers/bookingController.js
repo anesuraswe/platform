@@ -1,21 +1,27 @@
-import jwt from "jsonwebtoken";
-export const shouldBeLoggedIn = async (req, res) => {
-  console.log(req.userId);
+const prisma = require('../lib/prisma.js');
 
-  res.status(200).json({ message: "You are authenticated!" });
+// Create a booking
+const createBooking = async (req, res) => {
+  const { userId, eventId, seatId } = req.body;
+  try {
+    const booking = await prisma.booking.create({
+      data: { userId, eventId, seatId },
+    });
+    res.status(201).json({ message: 'Booking created successfully', booking });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create booking' });
+  }
 };
 
-export const shouldBeAdmin = async (req, res) => {
-  const token = req.cookies.token;
-
-  if (!token) return res.status(401).json({ message: "Not authenticated!" });
-
-  jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, payload) => {
-    if (err) return res.status(403).json({ message: "Token is not valid!" });
-    if (!payload.isAdmin) {
-      return res.status(403).json({ message: "Not authorised!" });
-    }
-  });
-
-  res.status(200).json({ message: "You are authenticated!" });
+// Get all bookings for a user
+const getBookingsByUserId = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const bookings = await prisma.booking.findMany({ where: { userId } });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
 };
+
+module.exports = { createBooking, getBookingsByUserId };

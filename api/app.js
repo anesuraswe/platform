@@ -1,26 +1,28 @@
-import express from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import authRoute from "./routes/auth.route.js";
-import postRoute from "./routes/post.route.js";
-import testRoute from "./routes/test.route.js";
-import userRoute from "./routes/user.route.js";
-import chatRoute from "./routes/chat.route.js";
-import messageRoute from "./routes/message.route.js";
+const express = require('express');
+const cors = require('cors');
+const authRoutes = require('./routes/authRoutes');
+const eventRoutes = require('./routes/eventRoutes');
+const seatRoutes = require('./routes/seatRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
+const errorHandler = require('./utils/errorHandler');
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+// Middleware
+app.use(cors());
 app.use(express.json());
-app.use(cookieParser());
 
-app.use("/api/auth", authRoute);
-app.use("/api/users", userRoute);
-app.use("/api/posts", postRoute);
-app.use("/api/test", testRoute);
-app.use("/api/chats", chatRoute);
-app.use("/api/messages", messageRoute);
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/seats', seatRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/tickets', ticketRoutes);
 
-app.listen(8800, () => {
-  console.log("Server is running!");
-});
+// Error handling middleware
+app.use(errorHandler);
+
+module.exports = app;

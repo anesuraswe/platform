@@ -1,13 +1,9 @@
-import express from "express";
-import {verifyToken} from "../middleware/verifyToken.js";
-import { addPost, deletePost, getPost, getPosts, updatePost } from "../controllers/post.controller.js";
-
+const express = require('express');
+const bookingController = require('../controllers/bookingController');
+const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
-router.get("/", getPosts);
-router.get("/:id", getPost);
-router.post("/", verifyToken, addPost);
-router.put("/:id", verifyToken, updatePost);
-router.delete("/:id", verifyToken, deletePost);
+router.post('/', authMiddleware, bookingController.createBooking);
+router.get('/:userId', authMiddleware, bookingController.getBookingsByUserId);
 
-export default router;
+module.exports = router;

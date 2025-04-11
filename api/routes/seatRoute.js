@@ -1,12 +1,8 @@
-import express from "express";
-import {
-  addMessage
-} from "../controllers/message.controller.js";
-import {verifyToken} from "../middleware/verifyToken.js";
-
+const express = require('express');
+const seatController = require('../controllers/seatController');
 const router = express.Router();
 
+router.get('/:eventId', seatController.getSeatsByEventId);
+router.put('/:seatId/reserve', seatController.reserveSeat);
 
-router.post("/:chatId", verifyToken, addMessage);
-
-export default router;
+module.exports = router;

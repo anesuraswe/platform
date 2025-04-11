@@ -9,96 +9,79 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "mongodb" // or "postgresql" if using PostgreSQL
   url      = env("DATABASE_URL")
 }
 
-model Post {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  title      String
-  price      Int
-  images     String[]
-  address    String
-  city       String
-  bedroom    Int
-  bathroom   Int
-  latitude   String
-  longitude  String
-  type       Type
-  property   Property
-  createdAt  DateTime    @default(now())
-  user       User        @relation(fields: [userId], references: [id])
-  userId     String      @db.ObjectId
-  postDetail PostDetail?
-  savedPosts SavedPost[]
-}
-
-enum Type {
-  buy
-  rent
-}
-
-enum Property {
-  apartment
-  house
-  condo
-  land
-}
-
-model PostDetail {
-  id         String  @id @default(auto()) @map("_id") @db.ObjectId
-  desc       String
-  utilities  String?
-  pet        String?
-  income     String?
-  size       Int?
-  school     Int?
-  bus        Int?
-  restaurant Int?
-  post       Post    @relation(fields: [postId], references: [id])
-  postId     String  @unique @db.ObjectId
-}
-
-model SavedPost {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
-  userId    String   @unique @db.ObjectId
-  postId    String   @unique @db.ObjectId
-  createdAt DateTime @default(now())
-
-  @@unique([userId, postId])
-}
-
 model User {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  email      String      @unique
-  username   String      @unique
-  password   String
-  avatar     String?
-  createdAt  DateTime    @default(now())
-  posts      Post[]
-  savedPosts SavedPost[]
-  chats      Chat[]      @relation(fields: [chatIDs], references: [id])
-  chatIDs    String[]    @db.ObjectId
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String    @unique
+  password      String
+  phoneNumber   String?
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
-model Chat {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  users     User[]    @relation(fields: [userIDs], references: [id])
-  userIDs   String[]  @db.ObjectId
-  createdAt DateTime  @default(now())
-  seenBy    String[]  @db.ObjectId
-  messages  Message[]
-  lastMessage String?
+model Event {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  date          DateTime
+  venue         String
+  totalSeats    Int
+  seats         Seat[]
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
+model Seat {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  eventId       String    @db.ObjectId
+  event         Event     @relation(fields: [eventId], references: [id])
+  seatNumber    String
+  status        String    @default("available") // e.g., available, reserved, booked
+  bookingId     String?   @db.ObjectId
+  booking       Booking?  @relation(fields: [bookingId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
 
-model Message {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  text      String
-  userId    String
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  chatId    String   @db.ObjectId
-  createdAt DateTime @default(now())
+model Booking {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String    @db.ObjectId
+  user          User      @relation(fields: [userId], references: [id])
+  eventId       String    @db.ObjectId
+  event         Event     @relation(fields: [eventId], references: [id])
+  seatId        String    @db.ObjectId
+  seat          Seat      @relation(fields: [seatId], references: [id])
+  payment       Payment?
+  ticket        Ticket?
+  bookingDate   DateTime  @default(now())
+  paymentStatus String    @default("pending") // e.g., pending, completed, failed
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Payment {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId     String    @db.ObjectId
+  booking       Booking   @relation(fields: [bookingId], references: [id])
+  paymentMethod String    // e.g., local, international
+  amount        Float
+  paymentDate   DateTime  @default(now())
+  transactionId String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Ticket {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId     String    @db.ObjectId
+  booking       Booking   @relation(fields: [bookingId], references: [id])
+  qrCode        String
+  status        String    @default("active") // e.g., active, used
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }

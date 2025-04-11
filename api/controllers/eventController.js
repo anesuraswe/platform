@@ -1,113 +1,43 @@
-import prisma from "../lib/prisma.js";
+const prisma = require('../lib/prisma.js');
 
-export const getChats = async (req, res) => {
-  const tokenUserId = req.userId;
-
+// Get all events
+const getAllEvents = async (req, res) => {
   try {
-    const chats = await prisma.chat.findMany({
-      where: {
-        userIDs: {
-          hasSome: [tokenUserId],
-        },
-      },
+    const events = await prisma.event.findMany();
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
+};
+
+// Get event by ID
+const getEventById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: { seats: true },
     });
-
-    for (const chat of chats) {
-      const receiverId = chat.userIDs.find((id) => id !== tokenUserId);
-
-      const receiver = await prisma.user.findUnique({
-        where: {
-          id: receiverId,
-        },
-        select: {
-          id: true,
-          username: true,
-          avatar: true,
-        },
-      });
-      chat.receiver = receiver;
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
     }
-
-    res.status(200).json(chats);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Failed to get chats!" });
+    res.json(event);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch event' });
   }
 };
 
-export const getChat = async (req, res) => {
-  const tokenUserId = req.userId;
-
+// Create a new event
+const createEvent = async (req, res) => {
+  const { name, date, venue, totalSeats } = req.body;
   try {
-    const chat = await prisma.chat.findUnique({
-      where: {
-        id: req.params.id,
-        userIDs: {
-          hasSome: [tokenUserId],
-        },
-      },
-      include: {
-        messages: {
-          orderBy: {
-            createdAt: "asc",
-          },
-        },
-      },
+    const event = await prisma.event.create({
+      data: { name, date, venue, totalSeats },
     });
-
-    await prisma.chat.update({
-      where: {
-        id: req.params.id,
-      },
-      data: {
-        seenBy: {
-          push: [tokenUserId],
-        },
-      },
-    });
-    res.status(200).json(chat);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Failed to get chat!" });
+    res.status(201).json(event);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create event' });
   }
 };
 
-export const addChat = async (req, res) => {
-  const tokenUserId = req.userId;
-  try {
-    const newChat = await prisma.chat.create({
-      data: {
-        userIDs: [tokenUserId, req.body.receiverId],
-      },
-    });
-    res.status(200).json(newChat);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Failed to add chat!" });
-  }
-};
-
-export const readChat = async (req, res) => {
-  const tokenUserId = req.userId;
-
-  
-  try {
-    const chat = await prisma.chat.update({
-      where: {
-        id: req.params.id,
-        userIDs: {
-          hasSome: [tokenUserId],
-        },
-      },
-      data: {
-        seenBy: {
-          set: [tokenUserId],
-        },
-      },
-    });
-    res.status(200).json(chat);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Failed to read chat!" });
-  }
-};
+module.exports = { getAllEvents, getEventById, createEvent };
